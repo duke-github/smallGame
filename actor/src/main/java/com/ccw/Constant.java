@@ -1,4 +1,4 @@
-package com.ccw.actor;
+package com.ccw;
 
 public class Constant {
 

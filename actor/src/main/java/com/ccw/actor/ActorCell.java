@@ -1,5 +1,7 @@
 package com.ccw.actor;
 
+import com.ccw.Constant;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ActorCell {
@@ -33,10 +35,10 @@ public class ActorCell {
         mailBox.offer(msg);
     }
 
-    public ActorCell(Long actorId) {
+    public ActorCell(Long actorId,Actor actor) {
         this.actorId = actorId;
         this.mailBox = new MailBox();
-        this.actor = createActor(actorId);
+        this.actor = actor;
     }
 
     private Actor createActor(Long actorId) {
