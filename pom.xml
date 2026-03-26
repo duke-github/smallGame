@@ -7,6 +7,10 @@
     <groupId>com.ccw</groupId>
     <artifactId>smallGame</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>actor</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
