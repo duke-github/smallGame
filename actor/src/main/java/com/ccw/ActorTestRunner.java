@@ -1,33 +1,26 @@
 package com.ccw;
 
-import com.ccw.shard.Shard;
-import jakarta.annotation.PostConstruct;
+import com.ccw.shard.ShardSystem;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ActorTestRunner {
+public class ActorTestRunner implements CommandLineRunner {
 
-    private final Shard shard;
+    private final ShardSystem shardSystem;
 
-    public ActorTestRunner(Shard shard) {
-        this.shard = shard;
+    public ActorTestRunner(ShardSystem shardSystem) {
+        this.shardSystem = shardSystem;
     }
 
-    @PostConstruct
-    public void test() throws InterruptedException {
+    @Override
+    public void run(String... args) {
         System.out.println("开始发送消息...");
 
         // 模拟多个 actor
-        for (long i = 1; i <= 3; i++) {
-            for (int j = 0; j < 5; j++) {
-                shard.doDispatcher(0, i, "msg-" + j);
-            }
+        for (long i = 1; i < 100; i++) {
+            shardSystem.doDispatcher(0, i, "msg-" + i);
         }
-
-        // 再发一波延迟消息
-        Thread.sleep(1000);
-
-        shard.doDispatcher(0, 1L, "after-1s");
 
         System.out.println("消息发送完成");
     }

@@ -3,28 +3,30 @@ package com.ccw.shard;
 import com.ccw.actor.ActorCell;
 import com.ccw.factory.ActorFactoryRegistry;
 import com.ccw.factory.ActorFactoryType;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 
-//分片处理器
+/**
+ * 分片处理器
+ * 每个shard绑定一个线程
+ */
 @Component
+@Scope("prototype")
 public class Shard {
 
     @Resource
-    private final ActorFactoryRegistry factoryRegistry;
+    private ActorFactoryRegistry factoryRegistry;
 
     public final Map<Long, ActorCell> actorCellMap = new ConcurrentHashMap<>();
 
-    public static final ConcurrentLinkedQueue<ActorCell> activeActorList = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<ActorCell> activeActorList = new ConcurrentLinkedQueue<>();
 
-    public Shard(ActorFactoryRegistry factoryRegistry) {
-        this.factoryRegistry = factoryRegistry;
+    public Shard() {
     }
 
     public void doDispatcher(int type, Long actorId, Object msg) {
@@ -33,11 +35,6 @@ public class Shard {
         if (actorCell.getActive().compareAndSet(false, true)) {
             activeActorList.add(actorCell);
         }
-    }
-
-    @PostConstruct
-    public void start() {
-        Executors.newSingleThreadExecutor().submit(this::run);
     }
 
     private ActorCell createActorCell(ActorFactoryType factoryType, Long actorId) {

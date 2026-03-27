@@ -1,5 +1,7 @@
 package com.ccw.actor;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class TestActor implements Actor {
 
     private final Long actorId;
@@ -8,8 +10,12 @@ public class TestActor implements Actor {
         this.actorId = actorId;
     }
 
+
+    AtomicInteger count = new AtomicInteger(0);
+
     @Override
     public void onReceive(Object msg) {
-        System.out.println("Actor[" + actorId + "] 收到消息: " + msg);
+        int current = count.addAndGet(1);
+        System.out.println(Thread.currentThread().getName() + " Actor[" + actorId + "] 一共收到" + current + "条消息: " + msg);
     }
 }
