@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * 分片处理器
@@ -21,6 +22,8 @@ public class Shard {
 
     @Resource
     private ActorFactoryRegistry factoryRegistry;
+
+    private volatile Thread workerThread;
 
     public final Map<Long, ActorCell> actorCellMap = new ConcurrentHashMap<>();
 
@@ -34,6 +37,7 @@ public class Shard {
         actorCell.addMsg(msg);
         if (actorCell.getActive().compareAndSet(false, true)) {
             activeActorList.add(actorCell);
+            LockSupport.unpark(workerThread);
         }
     }
 
@@ -44,16 +48,26 @@ public class Shard {
 
     public void run() {
         System.out.println("Shard running...");
+        workerThread = Thread.currentThread();
+
+        int idleCount = 0;
+
         while (true) {
             ActorCell cell = activeActorList.poll();
             if (cell == null) {
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                if (idleCount < 100) {
+                    Thread.onSpinWait(); //自旋
+                    idleCount++;
+                    continue;
                 }
+                //判断 - 再次确认队列为空 缩小判断和休眠的间歇
+                if (activeActorList.isEmpty()) {
+                    LockSupport.park();
+                }
+                idleCount = 0;
                 continue;
             }
+            idleCount = 0;
             cell.loop();
             if (cell.hasMsg()) {
                 activeActorList.offer(cell);

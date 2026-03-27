@@ -6,16 +6,10 @@
     <!-- 使用阿里云的 Maven 仓库作为主仓库 -->
     <mirrors>
         <mirror>
-            <id>tencent</id>
-            <name>tencent maven</name>
-            <url>http://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
-            <mirrorOf>central</mirrorOf>
-        </mirror>
-        <mirror>
-            <id>repo1</id>
-            <name>repo1 maven</name>
-            <url>https://repo1.maven.org/maven2/</url>
-            <mirrorOf>central</mirrorOf>
+            <id>aliyun</id>
+            <mirrorOf>*</mirrorOf>
+            <name>Aliyun Maven</name>
+            <url>https://maven.aliyun.com/repository/public</url>
         </mirror>
     </mirrors>
 
