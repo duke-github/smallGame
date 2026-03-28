@@ -9,6 +9,7 @@ public class ActorCell {
     private Actor actor;
     private MailBox mailBox;
     private AtomicBoolean isActive = new AtomicBoolean(false);
+    public long lastActiveTime = System.currentTimeMillis();
 
     public Actor getActor() {
         return actor;
@@ -35,7 +36,7 @@ public class ActorCell {
         mailBox.offer(msg);
     }
 
-    public ActorCell(Long actorId,Actor actor) {
+    public ActorCell(Long actorId, Actor actor) {
         this.actorId = actorId;
         this.mailBox = new MailBox();
         this.actor = actor;
@@ -47,5 +48,13 @@ public class ActorCell {
 
     public boolean hasMsg() {
         return !mailBox.isEmpty();
+    }
+
+    public boolean canClear() {
+        return hasMsg() && isActive.get() && lastActiveTime - System.currentTimeMillis() > Constant.ACTOR_EXPIRE_TIME;
+    }
+
+    public void resetLastActiveTime() {
+        lastActiveTime = System.currentTimeMillis();
     }
 }
