@@ -1,6 +1,7 @@
 package com.ccw.actor;
 
 import com.ccw.Constant;
+import com.ccw.message.Message;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,7 +33,7 @@ public class ActorCell {
         }
     }
 
-    public void addMsg(Object msg) {
+    public void addMsg(Message msg) {
         mailBox.offer(msg);
     }
 

@@ -4,6 +4,7 @@ import com.ccw.Constant;
 import com.ccw.actor.ActorCell;
 import com.ccw.factory.ActorFactoryRegistry;
 import com.ccw.factory.ActorFactoryType;
+import com.ccw.message.Message;
 import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,7 @@ public class Shard {
     public Shard() {
     }
 
-    public void doDispatcher(int type, Long actorId, Object msg) {
+    public void doDispatcher(int type, Long actorId, Message msg) {
         ActorCell actorCell = actorCellMap.computeIfAbsent(actorId, k -> createActorCell(ActorFactoryType.getByValue(type), actorId));
         actorCell.addMsg(msg);
         if (actorCell.getActive().compareAndSet(false, true)) {
@@ -52,7 +53,6 @@ public class Shard {
 
 
     public void run() {
-        System.out.println("Shard running...");
         lastClearTime = System.currentTimeMillis();
         workerThread = Thread.currentThread();
 

@@ -1,5 +1,6 @@
 package com.ccw.shard;
 
+import com.ccw.message.Message;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.context.ApplicationContext;
@@ -48,7 +49,7 @@ public class ShardSystem {
 
     //提取一个dispatcher 将不同的actor分配给不同的shard 但是相同的actor要分配给相同的shard
     //不保存actor - shard对应关系 只根据算法判断
-    public void doDispatcher(int type, Long actorId, Object msg) {
+    public void doDispatcher(int type, Long actorId, Message msg) {
         Shard shard = shardMap.computeIfAbsent(actorId, k -> {
             //这里是检索
             int i = ThreadLocalRandom.current().nextInt(shards.size());
