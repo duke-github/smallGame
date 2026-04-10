@@ -12,6 +12,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,14 +21,17 @@ public class NettyServer {
     private EventLoopGroup boss;
     private EventLoopGroup worker;
 
+    @Value("${netty.port}")
+    private int nettyPort;
+    @Value("${netty.path}")
+    private String path;
+
     @PostConstruct
     public void start() {
-        System.out.println("启动netty1");
         new Thread(() -> {
-            System.out.println("启动netty");
             boss = new NioEventLoopGroup(1);
             worker = new NioEventLoopGroup();
-
+            System.out.println(path);
             try {
                 ServerBootstrap bootstrap = new ServerBootstrap();
                 bootstrap.group(boss, worker)
@@ -37,11 +41,11 @@ public class NettyServer {
                             protected void initChannel(SocketChannel ch) {
                                 ch.pipeline().addLast(new HttpServerCodec())
                                         .addLast(new HttpObjectAggregator(65536))
-                                        .addLast(new WebSocketServerProtocolHandler("/ws"));
+                                        .addLast(new WebSocketServerProtocolHandler(path));
                             }
                         });
 
-                ChannelFuture future = bootstrap.bind(9090).sync();
+                ChannelFuture future = bootstrap.bind(nettyPort).sync();
                 future.channel().closeFuture().sync();
             } catch (Exception e) {
                 e.printStackTrace();

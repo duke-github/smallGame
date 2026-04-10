@@ -1,0 +1,3 @@
+netty:
+  port: 9090
+  path: /ws
