@@ -7,7 +7,9 @@ public class BasicHandler  extends SimpleChannelInboundHandler {
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+
+
         ctx.writeAndFlush("返回数据");
     }
 }

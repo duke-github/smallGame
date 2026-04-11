@@ -2,8 +2,13 @@ package com.ccw.message;
 
 public class Message {
     private int length;
-    private int head;
-    private Object body;
+    private int msgId;
+    private byte[] body;
+
+    public Message(int msgId,byte[] bytes) {
+        this.msgId = msgId;
+        this.body =bytes;
+    }
 
     public int getLength() {
         return length;
@@ -13,19 +18,19 @@ public class Message {
         this.length = length;
     }
 
-    public int getHead() {
-        return head;
+    public int getMsgId() {
+        return msgId;
     }
 
-    public void setHead(int head) {
-        this.head = head;
+    public void setMsgId(int msgId) {
+        this.msgId = msgId;
     }
 
-    public Object getBody() {
+    public byte[] getBody() {
         return body;
     }
 
-    public void setBody(Object body) {
+    public void setBody(byte[] body) {
         this.body = body;
     }
 }
