@@ -1,7 +1,6 @@
 package com.ccw.actor;
 
-import com.ccw.message.Message;
-
+import com.ccw.netty.message.Message;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 

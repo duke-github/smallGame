@@ -1,6 +1,6 @@
 package com.ccw.netty.handler;
 
-import com.ccw.message.Message;
+import com.ccw.netty.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

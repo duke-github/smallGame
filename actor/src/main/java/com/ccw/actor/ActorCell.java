@@ -1,7 +1,7 @@
 package com.ccw.actor;
 
 import com.ccw.Constant;
-import com.ccw.message.Message;
+import com.ccw.netty.message.Message;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

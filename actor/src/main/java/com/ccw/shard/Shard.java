@@ -4,11 +4,10 @@ import com.ccw.Constant;
 import com.ccw.actor.ActorCell;
 import com.ccw.factory.ActorFactoryRegistry;
 import com.ccw.factory.ActorFactoryType;
-import com.ccw.message.Message;
+import com.ccw.netty.message.Message;
 import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

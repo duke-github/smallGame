@@ -1,6 +1,6 @@
 package com.ccw;
 
-import com.ccw.netty.handler.BasicHandler;
+import com.ccw.netty.handler.MessageDispatcherHandler;
 import com.ccw.netty.handler.SocketMessageDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -30,7 +30,6 @@ public class NettyServer {
         new Thread(() -> {
             boss = new NioEventLoopGroup(1);
             worker = new NioEventLoopGroup();
-            System.out.println(path);
             try {
                 ServerBootstrap bootstrap = new ServerBootstrap();
                 bootstrap.group(boss, worker)
@@ -38,7 +37,7 @@ public class NettyServer {
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
-                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new BasicHandler());
+                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new MessageDispatcherHandler());
                             }
                         });
 

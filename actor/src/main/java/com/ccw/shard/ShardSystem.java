@@ -1,11 +1,10 @@
 package com.ccw.shard;
 
-import com.ccw.message.Message;
+import com.ccw.netty.message.Message;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

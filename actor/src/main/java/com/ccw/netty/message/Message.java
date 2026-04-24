@@ -1,13 +1,13 @@
-package com.ccw.message;
+package com.ccw.netty.message;
 
 public class Message {
     private int length;
     private int msgId;
     private byte[] body;
 
-    public Message(int msgId,byte[] bytes) {
+    public Message(int msgId, byte[] bytes) {
         this.msgId = msgId;
-        this.body =bytes;
+        this.body = bytes;
     }
 
     public int getLength() {
