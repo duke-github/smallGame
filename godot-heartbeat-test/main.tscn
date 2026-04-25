@@ -1,0 +1,263 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6r1k2r2y7r3n"]
+
+[sub_resource type="GDScript" id="GDScript_0j0b5"]
+script/source = "extends Control
+
+@onready var host_edit: LineEdit = %Host
+@onready var port_edit: LineEdit = %Port
+@onready var status_label: Label = %Status
+@onready var log: RichTextLabel = %Log
+@onready var heartbeat_timer: Timer = %HeartbeatTimer
+
+var tcp := StreamPeerTCP.new()
+var recv_buf := PackedByteArray()
+var connected := false
+var last_status: int = -1
+var connect_start_ms: int = 0
+
+func _ready() -> void:
+	host_edit.text = \"127.0.0.1\"
+	port_edit.text = \"9090\"
+	heartbeat_timer.wait_time = 5.0
+	heartbeat_timer.one_shot = false
+	_log_line(\"Ready.\")
+
+func _process(_delta: float) -> void:
+	_poll_socket()
+
+func _poll_socket() -> void:
+	tcp.poll()
+	var status := tcp.get_status()
+	if status != last_status:
+		last_status = status
+		_log_line(\"TCP status=%d\" % status)
+
+	if not connected:
+		if status == StreamPeerTCP.STATUS_CONNECTED:
+			connected = true
+			_set_status(\"Connected\")
+			_log_line(\"Socket connected.\")
+		elif status == StreamPeerTCP.STATUS_CONNECTING:
+			_set_status(\"Connecting...\")
+			var now_ms := int(Time.get_unix_time_from_system() * 1000.0)
+			if connect_start_ms > 0 and (now_ms - connect_start_ms) > 8000:
+				_log_line(\"Connect timeout (>8s). If server is up, check firewall/port.\")
+				connect_start_ms = 0
+		else:
+			if status == StreamPeerTCP.STATUS_ERROR:
+				_set_status(\"Connect error\")
+			return
+
+	if status != StreamPeerTCP.STATUS_CONNECTED:
+		connected = false
+		heartbeat_timer.stop()
+		_set_status(\"Disconnected\")
+		_log_line(\"Socket disconnected.\")
+		return
+
+	var available := tcp.get_available_bytes()
+	if available <= 0:
+		return
+
+	var chunk := tcp.get_data(available)
+	var err: int = chunk[0]
+	var data: PackedByteArray = chunk[1]
+	if err != OK:
+		_log_line(\"Read error: %d\" % err)
+		return
+
+	recv_buf.append_array(data)
+	_parse_frames()
+
+func _parse_frames() -> void:
+	while true:
+		if recv_buf.size() < 4:
+			return
+		var length := _peek_i32_be(recv_buf, 0)
+		if length < 4 or length > 10 * 1024:
+			_log_line(\"Invalid frame length=%d, dropping buffer.\" % length)
+			recv_buf = PackedByteArray()
+			return
+		if recv_buf.size() < 4 + length:
+			return
+
+		var msg_id := _peek_i32_be(recv_buf, 4)
+		var body_len := length - 4
+		var body := recv_buf.slice(8, 8 + body_len)
+
+		recv_buf = recv_buf.slice(4 + length, recv_buf.size())
+
+		_on_frame(msg_id, body)
+
+func _on_frame(msg_id: int, body: PackedByteArray) -> void:
+	var text := body.get_string_from_utf8()
+	_log_line(\"<- msgId=%d body=%s\" % [msg_id, text])
+	var parsed: Variant = JSON.parse_string(text)
+	if typeof(parsed) == TYPE_DICTIONARY:
+		if parsed.has(\"serverTime\") and parsed.has(\"clientTime\"):
+			var now_ms: int = int(Time.get_unix_time_from_system() * 1000.0)
+			var rtt_ms: int = now_ms - int(parsed[\"clientTime\"])
+			_log_line(\"   serverTime=%s rtt_ms≈%s\" % [str(parsed[\"serverTime\"]), str(rtt_ms)])
+
+func _send_heartbeat() -> void:
+	if not connected:
+		_log_line(\"Not connected.\")
+		return
+	var client_time_ms := int(Time.get_unix_time_from_system() * 1000.0)
+	var body_text := JSON.stringify({\"clientTime\": client_time_ms, \"serverTime\": 0})
+	_send_frame(2, body_text.to_utf8_buffer())
+	_log_line(\"-> HEART_BEAT msgId=2 clientTime=%d\" % client_time_ms)
+
+func _send_frame(msg_id: int, body: PackedByteArray) -> void:
+	var buf := StreamPeerBuffer.new()
+	buf.big_endian = true
+	buf.put_32(4 + body.size())
+	buf.put_32(msg_id)
+	buf.put_data(body)
+	var out_bytes := buf.data_array
+	var err := tcp.put_data(out_bytes)
+	if err != OK:
+		_log_line(\"Write error: %d\" % err)
+
+func _peek_i32_be(bytes: PackedByteArray, offset: int) -> int:
+	return (int(bytes[offset]) << 24) | (int(bytes[offset + 1]) << 16) | (int(bytes[offset + 2]) << 8) | int(bytes[offset + 3])
+
+func _set_status(s: String) -> void:
+	status_label.text = s
+
+func _log_line(s: String) -> void:
+	log.append_text(s + \"\\n\")
+	log.scroll_to_line(log.get_line_count())
+
+func _on_connect_pressed() -> void:
+	if connected:
+		_log_line(\"Already connected.\")
+		return
+
+	if tcp.get_status() != StreamPeerTCP.STATUS_NONE:
+		tcp.disconnect_from_host()
+		tcp = StreamPeerTCP.new()
+		recv_buf = PackedByteArray()
+		connected = false
+		last_status = -1
+
+	var host := host_edit.text.strip_edges()
+	var port := int(port_edit.text)
+	var err := tcp.connect_to_host(host, port)
+	if err != OK:
+		_set_status(\"Connect failed\")
+		_log_line(\"connect_to_host error: %d\" % err)
+		return
+	connect_start_ms = int(Time.get_unix_time_from_system() * 1000.0)
+	_set_status(\"Connecting...\")
+	_log_line(\"Connecting to %s:%d ...\" % [host, port])
+
+func _on_disconnect_pressed() -> void:
+	heartbeat_timer.stop()
+	tcp.disconnect_from_host()
+	connected = false
+	_set_status(\"Disconnected\")
+	_log_line(\"Disconnected.\")
+
+func _on_heartbeat_timer_timeout() -> void:
+	_send_heartbeat()
+
+func _on_start_heartbeat_pressed() -> void:
+	if not connected:
+		_log_line(\"Not connected.\")
+		return
+	heartbeat_timer.start()
+	_log_line(\"Heartbeat started (5s interval).\")
+
+func _on_stop_heartbeat_pressed() -> void:
+	heartbeat_timer.stop()
+	_log_line(\"Heartbeat stopped.\")
+
+func _on_manual_heartbeat_pressed() -> void:
+	_send_heartbeat()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if connected:
+			tcp.disconnect_from_host()
+"
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_0j0b5")
+
+[node name="Root" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="HBoxContainer" parent="Root"]
+layout_mode = 2
+
+[node name="Host" type="LineEdit" parent="Root/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Host"
+
+[node name="Port" type="LineEdit" parent="Root/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+placeholder_text = "Port"
+
+[node name="Connect" type="Button" parent="Root/TopBar"]
+layout_mode = 2
+text = "Connect"
+
+[node name="Disconnect" type="Button" parent="Root/TopBar"]
+layout_mode = 2
+text = "Disconnect"
+
+[node name="ManualHeartbeat" type="Button" parent="Root/TopBar"]
+layout_mode = 2
+text = "Send Heartbeat"
+
+[node name="StartHeartbeat" type="Button" parent="Root/TopBar"]
+layout_mode = 2
+text = "Start Auto"
+
+[node name="StopHeartbeat" type="Button" parent="Root/TopBar"]
+layout_mode = 2
+text = "Stop Auto"
+
+[node name="Status" type="Label" parent="Root/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Disconnected"
+horizontal_alignment = 2
+
+[node name="Log" type="RichTextLabel" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="HeartbeatTimer" type="Timer" parent="Root"]
+unique_name_in_owner = true
+
+[connection signal="pressed" from="Root/TopBar/Connect" to="." method="_on_connect_pressed"]
+[connection signal="pressed" from="Root/TopBar/Disconnect" to="." method="_on_disconnect_pressed"]
+[connection signal="pressed" from="Root/TopBar/ManualHeartbeat" to="." method="_on_manual_heartbeat_pressed"]
+[connection signal="pressed" from="Root/TopBar/StartHeartbeat" to="." method="_on_start_heartbeat_pressed"]
+[connection signal="pressed" from="Root/TopBar/StopHeartbeat" to="." method="_on_stop_heartbeat_pressed"]
+[connection signal="timeout" from="Root/HeartbeatTimer" to="." method="_on_heartbeat_timer_timeout"]
