@@ -20,6 +20,15 @@ public class MessageMeta<T> {
         handler.handler(ctx, obj);
     }
 
+    public byte[] serialize(T obj) {
+        return serializer.serialize(obj);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static byte[] serializeAny(MessageMeta<?> meta, Object obj) {
+        return ((MessageMeta<Object>) meta).serialize(obj);
+    }
+
     public Class<T> getRequestDataClassType() {
         return requestDataClassType;
     }

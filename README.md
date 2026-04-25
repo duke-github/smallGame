@@ -119,6 +119,48 @@ actor.tell(new LoginMessage(playerId));
 
 ---
 
+## 💓 心跳协议（Netty TCP）
+
+当前 `actor` 模块内置了一个 **TCP 心跳协议**，用于验证连通性与回包链路。
+
+### 服务端监听
+
+- **端口**：`actor/src/main/resources/application.yml` 中 `netty.port`，默认 `9090`
+
+### 协议帧格式
+
+服务端解码器 `SocketMessageDecoder` 约定帧格式为：
+
+- `length`：int32（大端），表示后续 `msgId + body` 的总长度
+- `msgId`：int32（大端）
+- `body`：bytes（UTF-8 JSON）
+
+其中：
+
+- `length = 4 + body.length`（`4` 是 `msgId` 的长度）
+- 心跳 `msgId = 2`（`RequestType.HEART_BEAT`）
+- body 示例：
+  - 请求：`{"clientTime": 1714050000000, "serverTime": 0}`
+  - 响应：服务端回写同一个对象并填充 `serverTime`
+
+### 服务端出站编码（非常关键）
+
+`HeartBeatHandler` 会 `ctx.writeAndFlush(heartBeat)` 回写业务对象。为了让对象能被写到网络上，pipeline 需要出站编码器：
+
+- `SocketMessageEncoder`：负责把 **业务对象** 按 `MessageRegistry` 中的 `MessageMeta(serializer)` 序列化为 `body bytes`，再封包成 `length + msgId + body` 写出。
+
+### Godot 客户端测试工程
+
+目录：`godot-heartbeat-test/`
+
+运行步骤：
+
+1. 启动服务端（Spring Boot），确保监听 `9090`
+2. 用 Godot 4.x 导入 `godot-heartbeat-test/` 并运行
+3. 点击 **Connect**，然后点击 **Send Heartbeat** 或 **Start Auto**
+
+---
+
 ## ⚙️ 配置说明
 
 ```yaml

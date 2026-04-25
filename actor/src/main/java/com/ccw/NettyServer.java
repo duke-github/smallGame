@@ -2,6 +2,7 @@ package com.ccw;
 
 import com.ccw.netty.handler.MessageDispatcherHandler;
 import com.ccw.netty.handler.SocketMessageDecoder;
+import com.ccw.netty.handler.SocketMessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -37,7 +38,7 @@ public class NettyServer {
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
-                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new MessageDispatcherHandler());
+                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new SocketMessageEncoder()).addLast(new MessageDispatcherHandler());
                             }
                         });
 
