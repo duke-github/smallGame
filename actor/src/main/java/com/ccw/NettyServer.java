@@ -12,6 +12,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,8 @@ public class NettyServer {
     private EventLoopGroup boss;
     private EventLoopGroup worker;
 
+    @Autowired
+    private MessageDispatcherHandler messageDispatcherHandler;
     @Value("${netty.port}")
     private int nettyPort;
     @Value("${netty.path}")
@@ -38,7 +41,7 @@ public class NettyServer {
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
-                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new SocketMessageEncoder()).addLast(new MessageDispatcherHandler());
+                                ch.pipeline().addLast(new SocketMessageDecoder()).addLast(new SocketMessageEncoder()).addLast(messageDispatcherHandler);
                             }
                         });
 

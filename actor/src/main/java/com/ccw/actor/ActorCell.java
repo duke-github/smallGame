@@ -1,12 +1,12 @@
 package com.ccw.actor;
 
 import com.ccw.Constant;
-import com.ccw.netty.message.Message;
+import com.ccw.Envelope;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ActorCell {
-    private Long actorId;
+    private String actorId;
     private Actor actor;
     private MailBox mailBox;
     private AtomicBoolean isActive = new AtomicBoolean(false);
@@ -26,24 +26,24 @@ public class ActorCell {
 
     public void loop() {
         int count = 0;
-        Object msg;
+        Envelope msg;
         while (count < Constant.ACTOR_LOOP_LIMIT && (msg = mailBox.poll()) != null) {
             actor.onReceive(msg);
             count++;
         }
     }
 
-    public void addMsg(Message msg) {
-        mailBox.offer(msg);
+    public void addMsg(Object msg) {
+        mailBox.offer((Envelope) msg);
     }
 
-    public ActorCell(Long actorId, Actor actor) {
+    public ActorCell(String actorId, Actor actor) {
         this.actorId = actorId;
         this.mailBox = new MailBox();
         this.actor = actor;
     }
 
-    private Actor createActor(Long actorId) {
+    private Actor createActor(String actorId) {
         return new TestActor(actorId);
     }
 

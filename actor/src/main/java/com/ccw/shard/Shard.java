@@ -28,8 +28,8 @@ public class Shard {
     private volatile Thread workerThread;
     private long lastClearTime;
 
-    public final Map<Long, ActorCell> actorCellMap = new ConcurrentHashMap<>();
-    private Iterator<Map.Entry<Long, ActorCell>> cleanIterator;
+    public final Map<String, ActorCell> actorCellMap = new ConcurrentHashMap<>();
+    private Iterator<Map.Entry<String, ActorCell>> cleanIterator;
 
 
     public final ConcurrentLinkedQueue<ActorCell> activeActorList = new ConcurrentLinkedQueue<>();
@@ -37,7 +37,7 @@ public class Shard {
     public Shard() {
     }
 
-    public void doDispatcher(int type, Long actorId, Message msg) {
+    public void doDispatcher(int type, String actorId, Object msg) {
         ActorCell actorCell = actorCellMap.computeIfAbsent(actorId, k -> createActorCell(ActorFactoryType.getByValue(type), actorId));
         actorCell.addMsg(msg);
         if (actorCell.getActive().compareAndSet(false, true)) {
@@ -46,7 +46,7 @@ public class Shard {
         }
     }
 
-    private ActorCell createActorCell(ActorFactoryType factoryType, Long actorId) {
+    private ActorCell createActorCell(ActorFactoryType factoryType, String actorId) {
         return new ActorCell(actorId, factoryRegistry.get(factoryType).create(actorId));
     }
 

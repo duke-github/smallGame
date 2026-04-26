@@ -1,6 +1,9 @@
 package com.ccw.shard;
 
+import com.ccw.Envelope;
 import com.ccw.netty.message.Message;
+import com.ccw.netty.message.MessageMeta;
+import com.ccw.session.Session;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.context.ApplicationContext;
@@ -21,7 +24,7 @@ public class ShardSystem {
     private volatile List<Shard> shards;
 
 
-    Map<Long, Shard> shardMap = new ConcurrentHashMap<>();
+    Map<String, Shard> shardMap = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() throws InterruptedException {
@@ -45,17 +48,13 @@ public class ShardSystem {
         this.shards = Collections.unmodifiableList(temp);
     }
 
-
-    //提取一个dispatcher 将不同的actor分配给不同的shard 但是相同的actor要分配给相同的shard
-    //不保存actor - shard对应关系 只根据算法判断
-    public void doDispatcher(int type, Long actorId, Message msg) {
-        Shard shard = shardMap.computeIfAbsent(actorId, k -> {
+    public void doDispatcher(Envelope envelope) {
+        Shard shard = shardMap.computeIfAbsent(envelope.getActorId(), k -> {
             //这里是检索
             int i = ThreadLocalRandom.current().nextInt(shards.size());
             return shards.get(i);
         });
 
-        shard.doDispatcher(type, actorId, msg);
+        shard.doDispatcher(0, envelope.getActorId(), envelope);
     }
-
 }

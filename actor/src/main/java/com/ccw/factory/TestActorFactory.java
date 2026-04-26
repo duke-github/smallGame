@@ -7,7 +7,7 @@ import com.ccw.actor.TestActor;
 public class TestActorFactory implements ActorFactory {
 
     @Override
-    public Actor create(Long actorId) {
+    public Actor create(String actorId) {
         return new TestActor(actorId);
     }
 }

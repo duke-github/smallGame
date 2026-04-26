@@ -2,7 +2,7 @@ package com.ccw.netty.handler;
 
 import com.ccw.netty.message.Message;
 import com.ccw.netty.message.MessageMeta;
-import com.ccw.netty.message.MessageRegistry;
+import com.ccw.netty.message.MessageCodecRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -20,8 +20,8 @@ public class SocketMessageEncoder extends MessageToByteEncoder<Object> {
             bodyBytes = m.getBody() == null ? new byte[0] : m.getBody();
         } else {
             // 业务对象 -> (registry 找到 msgId + 对应 serializer) -> body bytes
-            msgId = MessageRegistry.resolveMsgIdByClass(msg.getClass());
-            MessageMeta<?> meta = MessageRegistry.resolveMetaByClass(msg.getClass());
+            msgId = MessageCodecRegistry.resolveMsgIdByClass(msg.getClass());
+            MessageMeta<?> meta = MessageCodecRegistry.resolveMetaByClass(msg.getClass());
             bodyBytes = MessageMeta.serializeAny(meta, msg);
         }
 

@@ -1,6 +1,8 @@
 package com.ccw.actor;
 
 
+import com.ccw.Envelope;
+
 /**
  * actor - mailBox
  * actor是一个执行单元 保存状态和数据
@@ -8,5 +10,5 @@ package com.ccw.actor;
  * actor之间通过mail 通信
  */
 public interface Actor  {
-    void onReceive(Object msg);
+    void onReceive(Envelope msg);
 }

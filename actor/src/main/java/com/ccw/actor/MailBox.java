@@ -1,17 +1,17 @@
 package com.ccw.actor;
 
-import com.ccw.netty.message.Message;
+import com.ccw.Envelope;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MailBox {
-    Queue<Message> queue = new ConcurrentLinkedQueue<>();
+    Queue<Envelope> queue = new ConcurrentLinkedQueue<>();
 
-    public void offer(Message msg) {
+    public void offer(Envelope msg) {
         queue.offer(msg);
     }
 
-    public Message poll() {
+    public Envelope poll() {
         return queue.poll();
     }
 

@@ -1,8 +1,8 @@
 package com.ccw.business.handler;
 
-import io.netty.channel.ChannelHandlerContext;
+import com.ccw.session.Session;
 
 public interface MessageHandler<T> {
 
-    void handler(ChannelHandlerContext ctx, T message);
+    void handler(Session session, T message);
 }

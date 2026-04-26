@@ -1,21 +1,28 @@
 package com.ccw.actor;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import com.ccw.Envelope;
+import com.ccw.business.handler.MessageHandler;
+import com.ccw.business.handler.MessageHandlerRegistry;
 
 public class TestActor implements Actor {
 
-    private final Long actorId;
+    private final String actorId;
 
-    public TestActor(Long actorId) {
+    public TestActor(String actorId) {
         this.actorId = actorId;
     }
 
-
-    AtomicInteger count = new AtomicInteger(0);
-
     @Override
-    public void onReceive(Object msg) {
-        int current = count.addAndGet(1);
-        System.out.println(Thread.currentThread().getName() + " Actor[" + actorId + "] 一共收到" + current + "条消息: " + msg);
+    public void onReceive(Envelope envelope) {
+        MessageHandler<?> messageHandler = MessageHandlerRegistry.getHandlerByMsgId(envelope.getMsgId());
+        if (messageHandler == null) {
+            throw new RuntimeException("handler不存在, msgId=" + envelope.getMsgId());
+        }
+        dispatch(messageHandler, envelope);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void dispatch(MessageHandler<?> handler, Envelope envelope) {
+        ((MessageHandler<T>) handler).handler(envelope.getSession(), (T) envelope.getMsg());
     }
 }
